@@ -11,7 +11,7 @@
       font-family: Arial, sans-serif;
       color: #333;
       min-height: 100vh;
-      overflow-x: hidden;
+      overflow: hidden;
     }
 
     /* Animated yellow gradient background */
@@ -23,13 +23,22 @@
       background: linear-gradient(120deg, #FFD966, #FFE699, #FFEB99, #FFCC66);
       background-size: 400% 400%;
       animation: gradientBG 15s ease infinite;
-      z-index: -1;
+      z-index: -2;
     }
 
     @keyframes gradientBG {
       0% { background-position: 0% 50%; }
       50% { background-position: 100% 50%; }
       100% { background-position: 0% 50%; }
+    }
+
+    #particles {
+      position: fixed;
+      top: 0; left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: -1;
+      pointer-events: none;
     }
 
     .container {
@@ -41,11 +50,10 @@
       display: flex;
       flex-direction: column;
       align-items: center;
-      background: rgba(255, 255, 255, 0.9); /* Light card overlay */
+      background: rgba(255, 255, 255, 0.9);
     }
 
-    .start-screen,
-    .question-block {
+    .start-screen, .question-block {
       background: rgba(255, 255, 255, 0.95);
       padding: 40px;
       border-radius: 16px;
@@ -67,20 +75,8 @@
       box-shadow: 0 2px 8px rgba(0,0,0,0.1);
     }
 
-    .question {
-      margin-top: 20px;
-      font-size: 20px;
-      font-weight: 600;
-      color: #333;
-    }
-
-    .choices {
-      display: flex;
-      flex-direction: column;
-      gap: 12px;
-      margin-top: 16px;
-      width: 100%;
-    }
+    .question { margin-top: 20px; font-size: 20px; font-weight: 600; color: #333; }
+    .choices { display: flex; flex-direction: column; gap: 12px; margin-top: 16px; width: 100%; }
 
     .choice {
       padding: 14px;
@@ -91,30 +87,10 @@
       font-size: 16px;
       transition: 0.2s;
     }
-
-    .choice:hover {
-      background: #FFEB99;
-      transform: scale(1.02);
-    }
-
-    .choice.selected {
-      background: #FDD835;
-      border-color: #FBC02D;
-    }
-
-    .choice.correct {
-      background: #AEEA00;
-      border-color: #64DD17;
-      color: #333;
-      font-weight: 600;
-    }
-
-    .choice.incorrect {
-      background: #FF8A65;
-      border-color: #FF5722;
-      color: #fff;
-      font-weight: 600;
-    }
+    .choice:hover { background: #FFEB99; transform: scale(1.02); }
+    .choice.selected { background: #FDD835; border-color: #FBC02D; }
+    .choice.correct { background: #AEEA00; border-color: #64DD17; color: #333; font-weight: 600; }
+    .choice.incorrect { background: #FF8A65; border-color: #FF5722; color: #fff; font-weight: 600; }
 
     .explanation {
       margin-top: 16px;
@@ -141,19 +117,13 @@
       box-shadow: 0 4px 8px rgba(0,0,0,0.2);
     }
 
-    .button:hover {
-      transform: scale(1.05);
-    }
-
-    .small-button {
-      background: #FFF3B0;
-      border: 1px solid #F7D97C;
-      color: #333;
-    }
+    .button:hover { transform: scale(1.05); }
+    .small-button { background: #FFF3B0; border: 1px solid #F7D97C; color: #333; }
 
   </style>
 </head>
 <body>
+  <canvas id="particles"></canvas>
 
   <div class="container" id="app">
     <div class="start-screen" id="start-screen">
@@ -166,53 +136,99 @@
   </div>
 
   <script>
+    /* Particle animation with mouse interaction */
+    const canvas = document.getElementById('particles');
+    const ctx = canvas.getContext('2d');
+    let particlesArray = [];
+    let mouse = { x: null, y: null };
+
+    window.addEventListener('mousemove', e => { mouse.x = e.x; mouse.y = e.y; });
+
+    function initParticles() {
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+      particlesArray = [];
+      const numberOfParticles = 70;
+      for (let i = 0; i < numberOfParticles; i++) {
+        particlesArray.push({
+          x: Math.random() * canvas.width,
+          y: Math.random() * canvas.height,
+          size: Math.random() * 4 + 1,
+          speedX: (Math.random() - 0.5) * 1,
+          speedY: (Math.random() - 0.5) * 1
+        });
+      }
+    }
+
+    function animateParticles() {
+      ctx.clearRect(0,0,canvas.width, canvas.height);
+      particlesArray.forEach(p => {
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, p.size, 0, Math.PI*2);
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.7)';
+        ctx.fill();
+
+        if(mouse.x && mouse.y){
+          let dx = mouse.x - p.x;
+          let dy = mouse.y - p.y;
+          let distance = Math.sqrt(dx*dx + dy*dy);
+          if(distance < 100){
+            p.x -= dx/30;
+            p.y -= dy/30;
+          }
+        }
+
+        p.x += p.speedX;
+        p.y += p.speedY;
+
+        if(p.x < 0 || p.x > canvas.width) p.speedX = -p.speedX;
+        if(p.y < 0 || p.y > canvas.height) p.speedY = -p.speedY;
+      });
+      requestAnimationFrame(animateParticles);
+    }
+
+    window.addEventListener('resize', initParticles);
+    initParticles();
+    animateParticles();
+
+    /* Quiz questions */
     const QUESTIONS = [
-      { q: "What does Zama build — in simple terms?", choices: ["Decentralized exchanges", "Tools for Fully Homomorphic Encryption (FHE)", "NFT marketplaces", "Cloud storage solutions"], answer: 1, explanation: "Zama focuses on FHE-based tools so blockchains can compute on encrypted data without revealing it." },
-      { q: "What is “FHEVM” in the Zama ecosystem?", choices: ["A decentralized stablecoin", "An oracle network", "A virtual machine for confidential smart contracts", "A ZK-rollup solution"], answer: 2, explanation: "FHEVM allows encrypted inputs, state, and outputs while staying EVM-compatible." },
-      { q: "In the Zama Protocol, what is symbolic execution used for?", choices: ["Faster consensus", "Off-loading FHE computations to coprocessors", "Reducing storage on-chain", "Enabling staking rewards"], answer: 1, explanation: "The base chain emits events, and FHE work is done by off-chain coprocessors." },
-      { q: "What does threshold decryption solve?", choices: ["Speeding up block finality", "Splitting the key so no single party can misuse it", "Lowering gas fees", "Increasing token supply"], answer: 1, explanation: "The key is divided across multiple parties; only a threshold can decrypt together." },
-      { q: "When is Zama’s mainnet launch planned?", choices: ["Q4 2024", "Q2 2025", "Q4 2025", "Q1 2026"], answer: 2, explanation: "According to the litepaper, Ethereum mainnet support is targeted for Q4 2025." },
-      { q: "How does Zama maintain composability with existing smart contracts?", choices: ["By creating its own L1", "By forcing contracts to migrate", "By layering on top of existing chains with pointers for coprocessors", "By disabling interoperability"], answer: 2, explanation: "Zama doesn’t fork Ethereum; it layers confidential operations on top of host chains." },
-      { q: "What is meant by “programmable confidentiality”?", choices: ["Gas fees are hidden", "Developers can code who can decrypt values", "Transactions are deleted", "Only validators see the data"], answer: 1, explanation: "Smart contracts define which users or entities can access decrypted values." },
-      { q: "Which extra technology does Zama use alongside cryptography?", choices: ["IPFS", "AWS Nitro Enclaves", "GPU mining", "Trusted browsers"], answer: 1, explanation: "Zama’s MPC protocols run inside AWS Nitro Enclaves to harden security." },
-      { q: "What does the Zama Protocol charge fees for?", choices: ["Storing NFTs", "Verifying proofs, decrypting, bridging ciphertexts", "On-chain votes", "Random numbers"], answer: 1, explanation: "The fee model covers verification, decryption, and bridging, not raw FHE compute." },
-      { q: "How many operators are planned at launch, and what types?", choices: ["10 (5 miners, 5 validators)", "16 (13 KMS nodes, 3 coprocessors)", "21 (all governance validators)", "32 (random validators)"], answer: 1, explanation: "The launch design includes 13 key management nodes and 3 coprocessors." },
-      { q: "What security level and MPC setup does Zama use?", choices: ["64-bit with 7 nodes", "96-bit with 10 nodes", "128-bit with 13 nodes (2/3 majority)", "256-bit with 20 nodes unanimous"], answer: 2, explanation: "Zama uses 128-bit security with 13 MPC nodes, requiring a 2/3 majority." },
-      { q: "Which of these is NOT part of Zama’s Standard Library?", choices: ["Confidential NFTs", "Sealed-bid auctions", "Confidential identity stacks", "Proof-of-work mining pools"], answer: 3, explanation: "PoW mining pools aren’t relevant. The library focuses on confidential dApps like tokens, NFTs, auctions, governance, and identity." }
+      { q:"What does Zama build — in simple terms?", choices:["Decentralized exchanges","Tools for Fully Homomorphic Encryption (FHE)","NFT marketplaces","Cloud storage solutions"], answer:1, explanation:"Zama focuses on FHE-based tools so blockchains can compute on encrypted data without revealing it."},
+      { q:"What is “FHEVM” in the Zama ecosystem?", choices:["A decentralized stablecoin","An oracle network","A virtual machine for confidential smart contracts","A ZK-rollup solution"], answer:2, explanation:"FHEVM allows encrypted inputs, state, and outputs while staying EVM-compatible."},
+      { q:"In the Zama Protocol, what is symbolic execution used for?", choices:["Faster consensus","Off-loading FHE computations to coprocessors","Reducing storage on-chain","Enabling staking rewards"], answer:1, explanation:"The base chain emits events, and FHE work is done by off-chain coprocessors."},
+      { q:"What does threshold decryption solve?", choices:["Speeding up block finality","Splitting the key so no single party can misuse it","Lowering gas fees","Increasing token supply"], answer:1, explanation:"The key is divided across multiple parties; only a threshold can decrypt together."},
+      { q:"When is Zama’s mainnet launch planned?", choices:["Q4 2024","Q2 2025","Q4 2025","Q1 2026"], answer:2, explanation:"Ethereum mainnet support is targeted for Q4 2025."},
+      { q:"How does Zama maintain composability with existing smart contracts?", choices:["By creating its own L1","By forcing contracts to migrate","By layering on top of existing chains with pointers for coprocessors","By disabling interoperability"], answer:2, explanation:"Zama layers confidential operations on top of host chains without forking Ethereum."},
+      { q:"What is meant by “programmable confidentiality”?", choices:["Gas fees are hidden","Developers can code who can decrypt values","Transactions are deleted","Only validators see the data"], answer:1, explanation:"Smart contracts define which users or entities can access decrypted values."},
+      { q:"Which extra technology does Zama use alongside cryptography?", choices:["IPFS","AWS Nitro Enclaves","GPU mining","Trusted browsers"], answer:1, explanation:"Zama’s MPC protocols run inside AWS Nitro Enclaves to harden security."},
+      { q:"What does the Zama Protocol charge fees for?", choices:["Storing NFTs","Verifying proofs, decrypting, bridging ciphertexts","On-chain votes","Random numbers"], answer:1, explanation:"The fee model covers verification, decryption, and bridging, not raw FHE compute."},
+      { q:"How many operators are planned at launch, and what types?", choices:["10 (5 miners, 5 validators)","16 (13 KMS nodes, 3 coprocessors)","21 (all governance validators)","32 (random validators)"], answer:1, explanation:"Launch includes 13 key management nodes and 3 coprocessors."},
+      { q:"What security level and MPC setup does Zama use?", choices:["64-bit with 7 nodes","96-bit with 10 nodes","128-bit with 13 nodes (2/3 majority)","256-bit with 20 nodes unanimous"], answer:2, explanation:"Zama uses 128-bit security with 13 MPC nodes, requiring a 2/3 majority."},
+      { q:"Which of these is NOT part of Zama’s Standard Library?", choices:["Confidential NFTs","Sealed-bid auctions","Confidential identity stacks","Proof-of-work mining pools"], answer:3, explanation:"PoW mining pools aren’t relevant; the library focuses on confidential dApps like tokens, NFTs, auctions, governance, and identity."}
     ];
 
-    let index = 0;
-    let score = 0;
-    let selected = null;
-
-    const app = document.getElementById("app");
+    let index=0, score=0, selected=null;
+    const app=document.getElementById("app");
 
     function startQuiz() {
-      index = 0;
-      score = 0;
-      selected = null;
+      index=0; score=0; selected=null;
       renderQuestion();
     }
 
     function renderQuestion() {
-      const current = QUESTIONS[index];
-
-      app.innerHTML = `
+      const current=QUESTIONS[index];
+      app.innerHTML=`
         <div class="header">
           <h1>Zama Quiz</h1>
-          <div>Question ${index + 1}/${QUESTIONS.length}</div>
+          <div>Question ${index+1}/${QUESTIONS.length}</div>
         </div>
-
         <div class="question-block">
           <div class="question">${current.q}</div>
           <div class="choices">
-            ${current.choices.map((c, i) => `
-              <div class="choice" onclick="selectChoice(${i})" id="choice-${i}">${c}</div>
-            `).join('')}
+            ${current.choices.map((c,i)=>`<div class="choice" onclick="selectChoice(${i})" id="choice-${i}">${c}</div>`).join('')}
           </div>
           <div id="explanation" class="explanation" style="display:none;"></div>
         </div>
-
         <div class="footer">
           <button class="small-button" onclick="startQuiz()">Restart</button>
           <button class="button" onclick="nextQuestion()">Next</button>
@@ -220,45 +236,34 @@
       `;
     }
 
-    function selectChoice(i) {
-      if (selected !== null) return;
-      selected = i;
-      const current = QUESTIONS[index];
-
-      current.choices.forEach((_, j) => {
-        const el = document.getElementById(`choice-${j}`);
-        if (j === current.answer) {
-          el.classList.add('correct');
-        } else if (j === i) {
-          el.classList.add('incorrect');
-        }
-        if (j === i) el.classList.add('selected');
+    function selectChoice(i){
+      if(selected!==null) return;
+      selected=i;
+      const current=QUESTIONS[index];
+      current.choices.forEach((_,j)=>{
+        const el=document.getElementById(`choice-${j}`);
+        if(j===current.answer){ el.classList.add('correct'); }
+        else if(j===i){ el.classList.add('incorrect'); }
+        if(j===i) el.classList.add('selected');
       });
-
-      if (i === current.answer) score++;
-
-      const exp = document.getElementById("explanation");
-      exp.innerText = current.explanation;
-      exp.style.display = "block";
+      if(i===current.answer) score++;
+      const exp=document.getElementById("explanation");
+      exp.innerText=current.explanation;
+      exp.style.display="block";
     }
 
-    function nextQuestion() {
-      if (selected === null) return;
-      selected = null;
-      index++;
-
-      if (index >= QUESTIONS.length) {
-        renderResult();
-      } else {
-        renderQuestion();
-      }
+    function nextQuestion(){
+      if(selected===null) return;
+      selected=null; index++;
+      if(index>=QUESTIONS.length) renderResult();
+      else renderQuestion();
     }
 
-    function renderResult() {
-      app.innerHTML = `
+    function renderResult(){
+      app.innerHTML=`
         <div class="start-screen">
           <h2>Your score: ${score}/${QUESTIONS.length}</h2>
-          <p>${score === QUESTIONS.length ? 'Perfect! Nice work.' : 'Good try — you can retake it.'}</p>
+          <p>${score===QUESTIONS.length ? 'Perfect! Nice work.' : 'Good try — you can retake it.'}</p>
           <button class="button" onclick="startQuiz()">Play again</button>
         </div>
       `;
