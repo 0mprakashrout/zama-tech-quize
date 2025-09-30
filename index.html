@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Zama Quiz</title>
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      font-family: Arial, sans-serif;
+      color: #f3f4f6;
+      height: 100vh;
+      overflow: hidden;
+    }
+
+    /* Animated Gradient Background */
+    body::before {
+      content: "";
+      position: fixed;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      background: linear-gradient(-45deg, #0f2027, #203a43, #2c5364, #1b2735);
+      background-size: 400% 400%;
+      animation: gradientBG 15s ease infinite;
+      z-index: -2;
+    }
+
+    @keyframes gradientBG {
+      0% { background-position: 0% 50%; }
+      50% { background-position: 100% 50%; }
+      100% { background-position: 0% 50%; }
+    }
+
+    /* Floating Particles */
+    .particles {
+      position: fixed;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      z-index: -1;
+      pointer-events: none;
+      overflow: hidden;
+    }
+
+    .particle {
+      position: absolute;
+      background: rgba(255, 255, 255, 0.15);
+      border-radius: 50%;
+      animation: floatUp linear infinite;
+    }
+
+    @keyframes floatUp {
+      from { transform: translateY(100vh) scale(0.5); opacity: 0; }
+      50% { opacity: 1; }
+      to { transform: translateY(-10vh) scale(1); opacity: 0; }
+    }
+
+    .container {
+      max-width: 720px;
+      margin: 40px auto;
+      padding: 24px;
+      border-radius: 16px;
+      box-shadow: 0 8px 40px rgba(0, 0, 0, 0.2);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    .start-screen,
+    .question-block {
+      background: rgba(255, 255, 255, 0.1);
+      padding: 40px;
+      border-radius: 16px;
+      text-align: center;
+      max-width: 500px;
+      width: 100%;
+    }
+
+    .header, .footer {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+      background-color: rgba(255, 255, 255, 0.1);
+      padding: 10px 20px;
+      border-radius: 12px;
+      width: 100%;
+    }
+
+    .question {
+      margin-top: 20px;
+      font-size: 20px;
+      font-weight: 600;
+    }
+
+    .choices {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      margin-top: 16px;
+      width: 100%;
+    }
+
+    .choice {
+      padding: 14px;
+      border-radius: 10px;
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      cursor: pointer;
+      background: rgba(255, 255, 255, 0.05);
+      font-size: 16px;
+      transition: 0.2s;
+    }
+
+    .choice:hover {
+      background: rgba(255, 255, 255, 0.15);
+    }
+
+    .choice.selected {
+      background: rgba(59, 130, 246, 0.3);
+      border-color: #3b82f6;
+    }
+
+    .choice.correct {
+      background: rgba(16, 185, 129, 0.3);
+      border-color: #10b981;
+      color: #d1fae5;
+      font-weight: 600;
+    }
+
+    .choice.incorrect {
+      background: rgba(239, 68, 68, 0.3);
+      border-color: #ef4444;
+      color: #fee2e2;
+      font-weight: 600;
+    }
+
+    .explanation {
+      margin-top: 16px;
+      font-size: 15px;
+      text-align: left;
+      background: rgba(255, 255, 255, 0.05);
+      padding: 12px;
+      border-radius: 8px;
+    }
+
+    .button, .small-button {
+      padding: 10px 16px;
+      border-radius: 10px;
+      border: none;
+      cursor: pointer;
+      font-weight: 600;
+      font-size: 16px;
+      transition: 0.2s;
+    }
+
+    .button {
+      background: linear-gradient(to right, #4f46e5, #6366f1);
+      color: white;
+    }
+
+    .small-button {
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      color: #f3f4f6;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Particle Layer -->
+  <div class="particles" id="particles"></div>
+
+  <div class="container" id="app">
+    <div class="start-screen" id="start-screen">
+      <h1>Zama Quiz</h1>
+      <p>Test Your Knowledge</p>
+      <h2>Welcome to QuizMaster!</h2>
+      <p>Test your knowledge of Zama, FHE, and confidential smart contracts. You'll get immediate feedback and see your final score at the end.</p>
+      <button class="button" onclick="startQuiz()">Start Quiz</button>
+    </div>
+  </div>
+
+  <script>
+    const QUESTIONS = [
+      { q: "What does Zama build — in simple terms?", choices: ["Decentralized exchanges", "Tools for Fully Homomorphic Encryption (FHE)", "NFT marketplaces", "Cloud storage solutions"], answer: 1, explanation: "Zama focuses on FHE-based tools so blockchains can compute on encrypted data without revealing it." },
+      { q: "What is “FHEVM” in the Zama ecosystem?", choices: ["A decentralized stablecoin", "An oracle network", "A virtual machine for confidential smart contracts", "A ZK-rollup solution"], answer: 2, explanation: "FHEVM allows encrypted inputs, state, and outputs while staying EVM-compatible." },
+      { q: "In the Zama Protocol, what is symbolic execution used for?", choices: ["Faster consensus", "Off-loading FHE computations to coprocessors", "Reducing storage on-chain", "Enabling staking rewards"], answer: 1, explanation: "The base chain emits events, and FHE work is done by off-chain coprocessors." },
+      { q: "What does threshold decryption solve?", choices: ["Speeding up block finality", "Splitting the key so no single party can misuse it", "Lowering gas fees", "Increasing token supply"], answer: 1, explanation: "The key is divided across multiple parties; only a threshold can decrypt together." },
+      { q: "When is Zama’s mainnet launch planned?", choices: ["Q4 2024", "Q2 2025", "Q4 2025", "Q1 2026"], answer: 2, explanation: "According to the litepaper, Ethereum mainnet support is targeted for Q4 2025." },
+      { q: "How does Zama maintain composability with existing smart contracts?", choices: ["By creating its own L1", "By forcing contracts to migrate", "By layering on top of existing chains with pointers for coprocessors", "By disabling interoperability"], answer: 2, explanation: "Zama doesn’t fork Ethereum; it layers confidential operations on top of host chains." },
+      { q: "What is meant by “programmable confidentiality”?", choices: ["Gas fees are hidden", "Developers can code who can decrypt values", "Transactions are deleted", "Only validators see the data"], answer: 1, explanation: "Smart contracts define which users or entities can access decrypted values." },
+      { q: "Which extra technology does Zama use alongside cryptography?", choices: ["IPFS", "AWS Nitro Enclaves", "GPU mining", "Trusted browsers"], answer: 1, explanation: "Zama’s MPC protocols run inside AWS Nitro Enclaves to harden security." },
+      { q: "What does the Zama Protocol charge fees for?", choices: ["Storing NFTs", "Verifying proofs, decrypting, bridging ciphertexts", "On-chain votes", "Random numbers"], answer: 1, explanation: "The fee model covers verification, decryption, and bridging, not raw FHE compute." },
+      { q: "How many operators are planned at launch, and what types?", choices: ["10 (5 miners, 5 validators)", "16 (13 KMS nodes, 3 coprocessors)", "21 (all governance validators)", "32 (random validators)"], answer: 1, explanation: "The launch design includes 13 key management nodes and 3 coprocessors." },
+      { q: "What security level and MPC setup does Zama use?", choices: ["64-bit with 7 nodes", "96-bit with 10 nodes", "128-bit with 13 nodes (2/3 majority)", "256-bit with 20 nodes unanimous"], answer: 2, explanation: "Zama uses 128-bit security with 13 MPC nodes, requiring a 2/3 majority." },
+      { q: "Which of these is NOT part of Zama’s Standard Library?", choices: ["Confidential NFTs", "Sealed-bid auctions", "Confidential identity stacks", "Proof-of-work mining pools"], answer: 3, explanation: "PoW mining pools aren’t relevant. The library focuses on confidential dApps like tokens, NFTs, auctions, governance, and identity." }
+    ];
+
+    let index = 0;
+    let score = 0;
+    let selected = null;
+
+    const app = document.getElementById("app");
+
+    function startQuiz() {
+      index = 0;
+      score = 0;
+      selected = null;
+      renderQuestion();
+    }
+
+    function renderQuestion() {
+      const current = QUESTIONS[index];
+
+      app.innerHTML = `
+        <div class="header">
+          <h1>Zama Quiz</h1>
+          <div>Question ${index + 1}/${QUESTIONS.length}</div>
+        </div>
+
+        <div class="question-block">
+          <div class="question">${current.q}</div>
+          <div class="choices">
+            ${current.choices.map((c, i) => `
+              <div class="choice" onclick="selectChoice(${i})" id="choice-${i}">${c}</div>
+            `).join('')}
+          </div>
+          <div id="explanation" class="explanation" style="display:none;"></div>
+        </div>
+
+        <div class="footer">
+          <button class="small-button" onclick="startQuiz()">Restart</button>
+          <button class="button" onclick="nextQuestion()">Next</button>
+        </div>
+      `;
+    }
+
+    function selectChoice(i) {
+      if (selected !== null) return;
+      selected = i;
+      const current = QUESTIONS[index];
+
+      current.choices.forEach((_, j) => {
+        const el = document.getElementById(`choice-${j}`);
+        if (j === current.answer) {
+          el.classList.add('correct');
+        } else if (j === i) {
+          el.classList.add('incorrect');
+        }
+        if (j === i) el.classList.add('selected');
+      });
+
+      if (i === current.answer) score++;
+
+      const exp = document.getElementById("explanation");
+      exp.innerText = current.explanation;
+      exp.style.display = "block";
+    }
+
+    function nextQuestion() {
+      if (selected === null) return;
+      selected = null;
+      index++;
+
+      if (index >= QUESTIONS.length) {
+        renderResult();
+      } else {
+        renderQuestion();
+      }
+    }
+
+    function renderResult() {
+      app.innerHTML = `
+        <div class="start-screen">
+          <h2>Your score: ${score}/${QUESTIONS.length}</h2>
+          <p>${score === QUESTIONS.length ? 'Perfect! Nice work.' : 'Good try — you can retake it.'}</p>
+          <button class="button" onclick="startQuiz()">Play again</button>
+        </div>
+      `;
+    }
+
+    // Generate particles dynamically
+    function createParticles() {
+      const particlesContainer = document.getElementById("particles");
+      for (let i = 0; i < 25; i++) {
+        const p = document.createElement("div");
+        p.classList.add("particle");
+        const size = Math.random() * 6 + 4;
+        p.style.width = `${size}px`;
+        p.style.height = `${size}px`;
+        p.style.left = `${Math.random() * 100}vw`;
+        p.style.animationDuration = `${8 + Math.random() * 8}s`;
+        p.style.animationDelay = `${Math.random() * 5}s`;
+        particlesContainer.appendChild(p);
+      }
+    }
+    createParticles();
+  </script>
+</body>
+</html>
